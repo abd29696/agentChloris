@@ -1,0 +1,175 @@
+{
+    "introduction": {
+        "title": "Introduction",
+        "text": "{consultancy_name} (referred to as Consultant) has been commissioned by {contractor_name} (referred to as Contractor) as National center for environmental compliance (NCEC) approved consultant, to conduct {report_frequency} Environmental Monitoring for {project_name}.\n \nThis report documents the environmental monitoring carried out on {report_date} and is the {report_number} Weekly Environmental monitoring.",
+        "subsections": {}
+    },
+    "scope_of_work": {
+        "title": "Scope of Work",
+        "text": "The scope of work is to perform {report_frequency} environmental monitoring as follows:",
+        "subsections": {
+            "monitoring_locations": {
+                "title": "Monitoring Locations",
+                "text": "The weekly environmental monitoring was conducted on {report_date}. The coordinates of the monitoring locations are provided in Table {table_number} and illustrated in Figure {figure_number}.",
+                "table": {
+                    "title": "Table {table_number}: Air quality monitoring location",
+                    "data": [
+                        ["Location", "Coordinates"],
+                        ["Site A", "24.7136° N, 46.6753° E"],
+                        ["Site B", "24.8607° N, 46.6623° E"]
+                    ]
+                },
+                "image": "path/to/monitoring_map.jpg"
+            }
+        }
+    },
+    "regulatory_standards": {
+        "title": "Regulatory Standards",
+        "text": "",
+        "subsections": {
+            "air": {
+                "title": "Regulatory Standard - Air Quality",
+                "text": "Implementing Regulation for “Air Quality” of Environmental Law Issued by Royal Decree No. (M/165), Dated 19/11/1441 AH. The below Table {table_number} shall be used as a reference for applicable Air Quality limits in the proposed project.",
+                "table": {
+                    "title": "Table {table_number}: Ambient Air Quality Standard",
+                    "data": [
+                        ["Pollutant", "Averaging Time", "Time Weighted Average (μg/m3)", "NCEC", "IFC", "Number of Allowable Exceedances"],
+                        ["SO2", "10 mins", "-", "500", "-", "-"],
+                        ["SO2", "Daily", "217", "20", "125 (Interim Target-1), 150 (Interim Target-2)", "3 times per year"],
+                        ["SO2", "1 hour", "200", "200", "-", "24 times per year"],
+                        ["NO2", "1 hour", "-", "40,000", "-", "Twice per year"],
+                        ["CO", "8 hours", "-", "-", "10,000", "-"],
+                        ["O3", "1 hour", "441", "-", "-", "-"],
+                        ["O3", "8 hours (Daily Maximum)", "157", "100", "160 (Interim Target-1)", "25 times per year (over 3 years)"],
+                        ["Pb", "Three months", "0.15", "-", "-", "-"],
+                        ["PM10", "Daily", "340", "-", "-", "12 times per year"],
+                        ["PM10", "Annual", "50", "20", "70 (Interim Target-1), 50 (Interim Target-2), 30 (Interim Target-3)", "-"],
+                        ["PM2.5", "Daily", "35", "25", "75 (Interim Target-1), 50 (Interim Target-2), 37.5 (Interim Target-3)", "12 times per year"],
+                        ["PM2.5", "Annual", "15", "10", "35 (Interim Target-1), 25 (Interim Target-2), 15 (Interim Target-3)", "-"]
+                    ]
+                }
+            },
+            "noise": {
+                "title": "Regulatory Standard - Noise",
+                "text": "The Implementing Regulation for “Noise” of Environmental Law Issued by Royal Decree No. (M/165), Dated 19/11/1441 AH. Noise criteria values are designed to protect the public and workers from physiological impairment that can result from excessive noise levels. The below Tables {table_number}, {table_number}, and {table_number} shall be used as a reference for applicable noise limits.",
+                "tables": [
+                    {
+                        "title": "Table {table_number}: NCEC & IFC Noise Limits for Residential & Commercial Noise",
+                        "data": [
+                            ["Category", "Description", "NCEC Noise Standard Daytime, LAeq,T (dB(A)) (7 am – 8 pm)", "NCEC Noise Standard Night, LAeq,T (dB(A)) (8 pm – 7 am)"],
+                            ["Category (A)", "Includes low-density residential areas, tourist attraction, recreation parks, the areas surrounding hospitals, schools, nursing homes, nurseries, and environmentally sensitive areas.", "50", "40"],
+                            ["Category (B)", "Includes medium-density residential areas", "55", "45"],
+                            ["Category (C)", "Includes high-density residential areas and areas comprising residential and commercial activities", "60", "50"],
+                            ["Category (D)", "Includes commercial areas, warehouses, and financial centers", "65", "55"],
+                            ["IFC Standard", "Residential", "55", "45"]
+                        ]
+                    },
+                    {
+                        "title": "Table {table_number}: NCEC Noise Limits for Industrial & Road Side Noise",
+                        "data": [
+                            ["Area Classification", "LAeq,T(dB)", "Day", "Night"],
+                            ["NCEC", "Industrial & Road Side", "70", "65"],
+                            ["IFC", "Residential", "55", "45"]
+                        ]
+                    },
+                    {
+                        "title": "Table {table_number}: NCEC Permissible Noise Exceedances & IFC Limits for General Construction Noise",
+                        "data": [
+                            ["Area Classification", "LAeq,T(dB)", "Day", "Night"],
+                            ["NCEC", "Up to 2.5 hours", "+10", "0"],
+                            ["NCEC", "2.5 to 8 hours", "+5", "0"],
+                            ["NCEC", "More than 8 hours", "0", "0"],
+                            ["IFC", "Commercial, Industrial", "70", "70"],
+                            ["IFC", "Residential", "55", "45"]
+                        ]
+                    }
+                ]
+            }
+        }
+    },
+    "ambient_air_quality_monitoring": {
+        "title": "Ambient Air Quality Monitoring",
+        "text": "Ambient air quality monitoring is a systematic approach to measure and assess the concentration of specific pollutants in the atmosphere over a defined period. The term \"ambient\" refers to the surrounding outdoor air, as opposed to indoor or localized air in specific settings.",
+        "subsections": {
+            "objective": {
+                "title": "Objective",
+                "text": "The objective of ambient air quality monitoring is:",
+                "bullet_list": ["To ensure that the site and its surroundings are in compliance with national or local air quality standards and regulations before construction starts.", "To identify potential air quality risks that might arise during construction and to take preventive measures.", "To provide a data-driven foundation for decision-making processes."]
+            },
+            "scope": {
+                "title": "Scope",
+                "text": "The scope of ambient air quality monitoring was to monitor the pollutants and particulate matter. Monitored parameters are as follows:",
+                "bullet_list": ["Carbon monoxide (CO)", "Ozone (O3)", "Nitrogen dioxide (NO2)", "Sulphur dioxide (SO2)", "Particulate matter PM2.5", "Particulate matter PM10"]
+            },
+            "instrumentation_and_methodology": {
+                "title": "Instrumentation and Methodology",
+                "subsections": {
+                    "instrumentation": {
+                        "title": "Instrumentation",
+                        "text": ""
+                    },
+                    "methodology": {
+                        "title": "Methodology",
+                        "text": "Air quality and particulate matter assessments were carried out at a height between 1 to 1.5 m from the ground. This height is roughly equivalent to an employee's breathing zone, ensuring the measurements closely represent the actual concentrations being inhaled. Monitoring for both air quality and particulate matter was performed in spot tests, for half an hour at each location. The data was recorded at one- minute intervals."
+                    }
+                }
+            },
+            "results_and_discussions": {
+                "title": "Results and Discussions",
+                "text": "Air quality monitoring data is summarized in Table {table_number}\nThe findings are depicted through illustrative representations in Figure {figure_number} to Figure {figure_number}, of the assessed air quality parameters that shows the compliance with the NCEC standards.\nThe air quality monitoring raw data is attached in Appendix B.",
+                "table": {
+                    "title": "Table {table_number}: Air quality monitoring data results",
+                    "data": [
+                        ["Area", "Day Limit (dB)", "Night Limit (dB)"],
+                        ["Residential", "55", "45"],
+                        ["Industrial", "75", "70"]
+                    ]
+                }
+            }
+        }
+    },
+    "noise_monitoring": {
+        "title": "Noise Monitoring",
+        "text": "According to the definition provided by NCEC, \"environmental noise\" refers to the outdoor sound generated as a result of human activities. Excessive noise is defined as noise that surpasses the maximum permissible noise level for the specific time of day and the area in which the premises are located, as measured at the nearest property or open space sensitive to noise. It is the responsibility of the occupant to prevent or control excessive noise emissions to maintain a suitable acoustic environment.",
+        "subsections": {
+            "objective": {
+                "title": "Objective",
+                "text": "The purpose of noise monitoring is:",
+                "bullet_list": ["To provide a detailed profile of current noise levels.", "To ensure that projected noise levels from the construction site complies with local, regional, or national noise regulations and standards.", "Based on collected data and projections, strategizing about potential noise control measures such as barriers, equipment modifications, and operational adjustments."]
+            },
+            "instrumentation_and_methodology": {
+                "title": "Instrumentation and Methodology",
+                "subsections": {
+                    "instrumentation": {
+                        "title": "Instrumentation",
+                        "text": ""
+                    },
+                    "methodology": {
+                        "title": "Methodology",
+                        "text": "The noise assessment adhered to the best practices outlined in ISO 1996-2, which pertains to the \"Determination of environmental noise level.\" The SLM was positioned on a tripod, elevated 1.5 meters above ground. To minimize wind disturbances during the recordings, a wind shield was affixed to the microphone. Each measurement session with the SLM was set for a 30-minutes duration. Calibration in the field was performed both before and after the recording sessions. All acquired data points were documented in decibels, dB(A)."
+                    }
+                }
+            },
+            "results_and_discussions": {
+                "title": "Results and Discussions",
+                "text": "Noise monitoring data is summarized in Table {table_number}. The graphical representation in Figure {figure_number} visually highlights how the evaluated noise levels complies with the stipulated NCEC standards.\n \n Noise monitoring data graphs extracted from the noise meter are attached in Appendix C.",
+                "table": {
+                    "title": "Table {table_number}: Noise monitoring data results",
+                    "data": [
+                        ["Area", "Day Limit (dB)", "Night Limit (dB)"],
+                        ["Residential", "55", "45"],
+                        ["Industrial", "75", "70"]
+                    ]
+                }
+            }
+        }
+    },
+    "conclusion": {
+        "title": "Conclusion"
+    },
+    "appendices": {
+        "title": "Appendices",
+        "text": "Additional information and data records are included in this section.",
+        "subsections": {}
+    }
+}

@@ -1,5 +1,12 @@
 {
     "consultancy_name": "Green Fields Environmental Consultancy",
-    "constant_text_json_file": "monitoring/config/constant_structure.json",
-    "output_dir": "generated_reports"
+    "structure_file": "monitoring/config/structure.json",
+    "output_dir": "generated_reports",
+
+
+    "conclusions": {
+        "air": "The project site's air quality was, focusing on key parameters such as Carbon Monoxide (CO), Sulphur Dioxide (SO2), Ozone (O3), Nitrogen Dioxide (NO2), Particulate Matter PM 10 & PM 2.5. The comprehensive dataset obtained from this monitoring process was then evaluated in relation to the air quality guidelines established by the NCEC.",
+        "noise": "The project’s noise quality was compared to the national standard.",
+        "verdict": "This analysis revealed that the observed monitoring parameter(s) consistently adhered to the national standards across all monitored locations at the project site."
+    }
 }
