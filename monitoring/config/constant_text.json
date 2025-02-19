@@ -15,7 +15,8 @@
     "air_quality_monitoring_objective": "Air samples are collected using high-volume samplers and analyzed for key pollutants such as PM2.5, PM10, NOx, and SO2.",
     "air_quality_monitoring_scope": "Equipment used includes real-time air quality monitoring stations and portable gas analyzers.",
     "air_quality_monitoring_instrumentation_and__methodology": "Monitoring is conducted at regular intervals, following a pre-defined schedule based on regulatory requirements.",
-    "air_quality_results_and_discussions": "Collected data is analyzed against permissible limits set by the environmental regulations to determine compliance levels."
+    "air_quality_results_and_discussions": "Collected data is analyzed against permissible limits set by the environmental regulations to determine compliance levels.",
+
 
 }
 

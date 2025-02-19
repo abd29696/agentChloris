@@ -244,19 +244,13 @@ def format_parameter_section(parameter):
 
 def generate_report():
     """Generates a monitoring report based on user input."""
-    # contractor_name = input("Enter the contractor's name: ").strip()
-    # project_name = input("Enter the project name: ").strip()
-    # report_frequency = input("Enter report frequency (Weekly, Monthly): ").strip().lower()
-    # report_date = input("Enter the report date (e.g., 06th January 2025): ").strip()
-    # report_number = input("Enter the report number (e.g., Twenty-third): ").strip()
-    # report_parameters = input("Enter report parameters (comma-separated, e.g., Air, Noise, Soil): ").strip()
+    contractor_name = input("Enter the contractor's name: ").strip()
+    project_name = input("Enter the project name: ").strip()
+    report_frequency = input("Enter report frequency (Weekly, Monthly): ").strip().lower()
+    report_date = input("Enter the report date (e.g., 06th January 2025): ").strip()
+    report_number = input("Enter the report number (e.g., Twenty-third): ").strip()
+    report_parameters = input("Enter report parameters (comma-separated, e.g., Air, Noise, Soil): ").strip()
 
-    contractor_name = "Amala"
-    project_name = "Concrete structure work of the HW1 Shura Island."
-    report_frequency = "Monthly"
-    report_date = "06th January 2025"
-    report_number = "Twenty-third"
-    report_parameters = "Air"
 
     # Load introduction content from JSON
     constant_text_json_file = CONSTANTS["constant_text_json_file"]
