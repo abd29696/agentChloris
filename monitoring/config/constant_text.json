@@ -1,0 +1,24 @@
+{
+    "introduction_first_paragraph": "{consultancy_name} (referred to as Consultant) has been commissioned by {contractor_name} (referred to as Contractor) as National Center for Environmental Compliance (NCEC) approved consultant, to conduct {report_frequency} Environmental Monitoring for {project_name}.",
+    "introduction_second_paragraph": "This report documents the environmental monitoring carried out on {report_date} and is the {report_number} {report_frequency} Environmental Monitoring.",
+
+    "scope_of_work": "The scope of work is to perform weekly environmental monitoring as follows:",
+    "scope_of_work_monitoring_locations": "The weekly environmental monitoring was conducted on {report_date}. The coordinates of the monitoring locations are provided in Table {table_number} and illustrated in Figure {figure_number}.",
+    "monitoring_locations_photo_text": "{figure_number_2} and {figure_number_3} shows the photographs of both monitored locations.",
+
+    "regulatory_standard_air": "Implementing Regulation for “Air Quality” of Environmental Law Issued by Royal Decree No. (M/165), Dated 19/11/1441 AH. The below Table {table_number} shall be used as a reference for applicable Air Quality limits in the proposed project.",
+    "regulatory_standard_noise": "The Implementing Regulation for “noise” of Environmental Law Issued by Royal Decree No. (M/165), Dated 19/11/1441 AH. Noise criteria values are designed to protect the public and workers from physiological impairment that can result from excessive noise levels. The below Tables {table_number}, {table_number2} and {table_number3} shall be used as a reference for applicable noise limits.",
+    "regulatory_standard_soil": "Soil quality monitoring ensures compliance with local soil contamination and remediation regulations.",
+    "regulatory_standard_water": "Water quality monitoring adheres to the National Water Quality Standards for safety and public health.",
+
+    "air_quality_monitoring": "Ambient air quality monitoring is a systematic approach to measure and assess the concentration of specific pollutants in the atmosphere over a defined period. The term \"ambient\" refers to the surrounding outdoor air, as opposed to indoor or localized air in specific settings.",
+    "air_quality_monitoring_objective": "Air samples are collected using high-volume samplers and analyzed for key pollutants such as PM2.5, PM10, NOx, and SO2.",
+    "air_quality_monitoring_scope": "Equipment used includes real-time air quality monitoring stations and portable gas analyzers.",
+    "air_quality_monitoring_instrumentation_and__methodology": "Monitoring is conducted at regular intervals, following a pre-defined schedule based on regulatory requirements.",
+    "air_quality_results_and_discussions": "Collected data is analyzed against permissible limits set by the environmental regulations to determine compliance levels."
+
+}
+
+
+
+

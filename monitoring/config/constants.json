@@ -1,0 +1,5 @@
+{
+    "consultancy_name": "Green Fields Environmental Consultancy",
+    "constant_text_json_file": "monitoring/config/constant_structure.json",
+    "output_dir": "generated_reports"
+}
