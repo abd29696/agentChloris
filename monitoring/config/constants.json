@@ -2,6 +2,7 @@
     "consultancy_name": "Green Fields Environmental Consultancy",
     "structure_file": "monitoring/config/structure.json",
     "output_dir": "generated_reports",
+    "template_dir": "monitoring/config/template.docx",
 
 
     "conclusions": {

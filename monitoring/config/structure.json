@@ -14,9 +14,7 @@
                 "table": {
                     "title": "Table {table_number}: Air quality monitoring location",
                     "data": [
-                        ["Location", "Coordinates"],
-                        ["Site A", "24.7136° N, 46.6753° E"],
-                        ["Site B", "24.8607° N, 46.6623° E"]
+                        ["Monitoring Location", "Description", "Latitude", "Longitude"]
                     ]
                 },
                 "image": "path/to/monitoring_map.jpg"
@@ -106,7 +104,8 @@
                 "subsections": {
                     "instrumentation": {
                         "title": "Instrumentation",
-                        "text": ""
+                        "text": "The PTM600 Portable Multi-Gas Analyzer is a mobile air quality detection system crafted to deliver instantaneous, in-depth evaluations of vital air quality indicators. Calibration certificates are attached in Appendix A.",
+                        "image": "monitoring/instrumentation/PTM600.png"
                     },
                     "methodology": {
                         "title": "Methodology",
@@ -120,9 +119,7 @@
                 "table": {
                     "title": "Table {table_number}: Air quality monitoring data results",
                     "data": [
-                        ["Area", "Day Limit (dB)", "Night Limit (dB)"],
-                        ["Residential", "55", "45"],
-                        ["Industrial", "75", "70"]
+                        ["Monitoring Locations", "Date and Time", "CO", "O3", "NO2", "SO2", "PM2.5", "PM10"]
                     ]
                 }
             }
@@ -142,7 +139,8 @@
                 "subsections": {
                     "instrumentation": {
                         "title": "Instrumentation",
-                        "text": ""
+                        "text": "For noise monitoring, Pulsar Model 45 Noise Level Meter, a Class 1 Sound Level Meter (SLM) was utilized, in conjunction with the Acoustic Calibrator Model 105. Both of these instruments adhere to Noise at Work regulations and the EU Directive 2003/10/EC. Calibration certificates are attached in Appendix A.\n \nThe collected noise measurement data encompasses parameters such as LAeq, LAmax, LAE, and LA1, LA5, LA10, LA50, LA90, LA95, LA99.\n \nThe calibrator consistently emits a 1kHz tone at 94dB, establishing the standard calibration frequency and sound level. Visual representations of the noise level meter and acoustic calibrator can be found in Figure 5.1 & 5.2 respectively.",
+                        "image": "monitoring/instrumentation/Pulsar45.jpg"
                     },
                     "methodology": {
                         "title": "Methodology",
@@ -156,9 +154,7 @@
                 "table": {
                     "title": "Table {table_number}: Noise monitoring data results",
                     "data": [
-                        ["Area", "Day Limit (dB)", "Night Limit (dB)"],
-                        ["Residential", "55", "45"],
-                        ["Industrial", "75", "70"]
+                        ["Monitoring Location", "Date and Time", "EQ", "MAX", "AE", "10", "50", "90"]
                     ]
                 }
             }
