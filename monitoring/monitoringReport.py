@@ -42,6 +42,9 @@ def add_title_page(doc, report_frequency):
     doc.add_paragraph(f"{report_frequency.capitalize()} Monitoring Report", "Title")
     doc.add_page_break()
 
+# def add_doc_control(doc, report_frequency):
+#     doc.add_paragraph()
+
 
 def add_table_of_contents(doc):
     """Adds a TOC field that updates when `F9` is pressed in Word."""
@@ -213,25 +216,50 @@ def add_bullet_list(doc, section_data, placeholders):
         doc.add_paragraph(formatted_point, style="List Bullet")
 
 
-def insert_tables(doc, section_data, placeholders, computed_table_numbers):
-    """Insert tables using precomputed table numbers."""
 
-    # ✅ Handle Single Table
+def insert_tables(doc, section_data, placeholders, computed_table_numbers):
+    """Insert tables using precomputed table numbers and dynamically inject monitoring data when applicable."""
+
+    # 🔹 Check if section contains a single table or multiple tables
     if "table" in section_data:
-        tables = [section_data["table"]]  # Convert single table into a list
+        tables = [section_data["table"]]
     elif "tables" in section_data:
-        tables = section_data["tables"]  # Use list of tables
+        tables = section_data["tables"]
     else:
         return  # No table data present
 
-    # ✅ Ensure Correct Number of Table Numbers Are Available
+    # ✅ Known headers for data injection
+    air_quality_headers = ["Monitoring Locations", "Date and Time", "CO", "O3", "NO2", "SO2", "PM2.5", "PM10"]
+    noise_quality_headers = ["Monitoring Location", "Date and Time", "EQ", "MAX", "AE", "10", "50", "90"]
+
+    # 🔹 Check if this section needs dynamic data injection
+    if "title" in section_data:
+        section_title = section_data["title"].lower()
+
+        # ✅ Monitoring Locations (Scope of Work)
+        if "monitoring locations" in section_title and "monitoring_locations" in placeholders:
+            tables[0]["data"] = placeholders["monitoring_locations"]
+
+        # ✅ Inject Air & Noise Quality Data
+        if "table" in section_data and "data" in section_data["table"] and section_data["table"]["data"]:
+            header_row = section_data["table"]["data"][0]
+
+            if header_row == air_quality_headers and "air_monitoring_data" in placeholders:
+                print("✅ Injecting Air Quality Data")
+                section_data["table"]["data"] = placeholders["air_monitoring_data"]
+
+            elif header_row == noise_quality_headers and "noise_monitoring_data" in placeholders:
+                print("✅ Injecting Noise Monitoring Data")
+                section_data["table"]["data"] = placeholders["noise_monitoring_data"]
+
+    # 🔹 Ensure Correct Number of Table Numbers Are Available
     if len(computed_table_numbers) < len(tables):
         print(f"⚠ Warning: Mismatch between precomputed table numbers and actual tables in section.")
         return  # Avoid index errors
 
-    # ✅ Insert All Tables
+    # 🔹 Insert All Tables
     for index, table_data in enumerate(tables):
-        if not isinstance(table_data, dict):
+        if not isinstance(table_data, dict) or "data" not in table_data or not table_data["data"]:
             print(f"⚠ Warning: Unexpected table format in section. Skipping.")
             continue
 
@@ -240,14 +268,13 @@ def insert_tables(doc, section_data, placeholders, computed_table_numbers):
 
         doc.add_paragraph(table_title, style="Heading 3")
 
-        # ✅ Insert Table
+        # ✅ Insert Updated Table into Document
         table = doc.add_table(rows=len(table_data["data"]), cols=len(table_data["data"][0]))
         table.style = 'Table Grid'
 
         for row_idx, row_data in enumerate(table_data["data"]):
             for col_idx, cell_data in enumerate(row_data):
                 table.cell(row_idx, col_idx).text = replace_placeholders(str(cell_data), placeholders)
-
 
 
 def insert_images_and_graphs(doc, section_data, computed_figure_numbers):
@@ -258,7 +285,14 @@ def insert_images_and_graphs(doc, section_data, computed_figure_numbers):
 
         image_path = section_data["image"]
         if os.path.exists(image_path):
-            doc.add_picture(image_path, width=Inches(5))
+            try:
+                from PIL import Image
+                with Image.open(image_path) as img:
+                    if img.info.get('dpi') is None:  # Check if DPI is missing
+                        img.info['dpi'] = (96, 96)  # Set a default DPI
+                doc.add_picture(image_path, width=Inches(3))
+            except Exception as e:
+                print(f"⚠ Warning: Failed to insert image {image_path}. Error: {e}")
 
     if "graph" in section_data:
         figure_number = computed_figure_numbers.pop(0)
@@ -266,7 +300,15 @@ def insert_images_and_graphs(doc, section_data, computed_figure_numbers):
 
         graph_path = section_data["graph"]
         if os.path.exists(graph_path):
-            doc.add_picture(graph_path, width=Inches(5))
+            try:
+                from PIL import Image
+                with Image.open(graph_path) as img:
+                    if img.info.get('dpi') is None:
+                        img.info['dpi'] = (96, 96)
+                doc.add_picture(graph_path, width=Inches(5))
+            except Exception as e:
+                print(f"⚠ Warning: Failed to insert graph {graph_path}. Error: {e}")
+
 
 
 def format_parameter_section(parameter):
@@ -279,20 +321,22 @@ def format_parameter_section(parameter):
     }
     return formatted_parameters.get(parameter.lower(), parameter.capitalize() + " Monitoring")
 
-def generate_report():
+def generate_report(placeholders):
     """Generates a monitoring report dynamically based on input data."""
 
     structure_file = CONSTANTS["structure_file"]
 
-    placeholders = {
-        "consultancy_name": CONSTANTS["consultancy_name"],
-        "contractor_name": "Amala",
-        "project_name": "Concrete structure work of the HW1 Shura Island.",
-        "report_frequency": "Monthly",
-        "report_date": "06th January 2025",
-        "report_number": "Twenty-third",
-        "report_parameters": "Air, Noise"
-    }
+    # placeholders = {
+    #     "consultancy_name": CONSTANTS["consultancy_name"],
+    #     "contractor_name": "Amala",
+    #     "project_name": "Concrete structure work of the HW1 Shura Island.",
+    #     "report_frequency": "Monthly",
+    #     "report_date": "06th January 2025",
+    #     "report_number": "Twenty-third",
+    #     "report_parameters": "Air, Noise"
+    # }
+
+    # placeholders = {'consultancy_name': 'Green Fields Environmental Consulting', 'contractor_name': 'sdfsafasf', 'project_name': 'sfsaf', 'project_number': '45343', 'reference_number': '23414', 'report_frequency': 'Weekly', 'report_date': '324234', 'report_number': '4324231', 'report_parameters': 'Air, Noise', 'monitoring_frequency': '30 mins', 'monitoring_locations': [['Monitoring Location', 'Description', 'Latitude', 'Longitude'], ['ml01', 'fdsafda', '421432', '432421'], ['ml02', 'dfsfddsaf', '23424', '432423']], 'air_monitoring_data': [['Monitoring Location', 'Time', 'CO', 'O3', 'NO2', 'SO2', 'PM2.5', 'PM10'], ['ml01', '423141', '23', '32', '43', '32', '21', '432'], ['ml02', 'r3242', '432', '23', '32', '43', '23', '34']], 'noise_monitoring_data': [['Monitoring Location', 'Time', 'EQ', 'Max', 'AE', '10', '50', '90'], ['ml01', '3421', '32', '32', '32', '32', '32', '32'], ['ml02', '342234', '54', '54', '45', '45', '54', '45']]}
 
 
     # Load structured JSON
@@ -327,10 +371,14 @@ def generate_report():
 
     # Create Word document
     doc = Document()
+
+    style = doc.styles['Normal']
+    style.font.name = 'Cambria'
+
     add_page_number(doc)
 
     # 📌 Title Page
-    add_title_page(doc, placeholders["report_frequency"])
+    # add_title_page(doc, placeholders["report_frequency"])
 
     # 📌 Table of Contents
     add_table_of_contents(doc)
@@ -346,6 +394,7 @@ def generate_report():
         else:
             print(f"⚠ Warning: Section '{section_key}' not found in JSON.")
 
+
     # 📌 Save Document
     output_dir = CONSTANTS["output_dir"]
     os.makedirs(output_dir, exist_ok=True)
@@ -353,13 +402,4 @@ def generate_report():
     doc.save(report_path)
 
     print(f"✅ {placeholders['report_frequency'].capitalize()} Monitoring Report generated: {report_path}")
-
-    # 📌 Collect User Inputs and Store in Placeholders Dictionary
-    # placeholders = {
-    #     "contractor_name": input("Enter the contractor's name: ").strip(),
-    #     "project_name": input("Enter the project name: ").strip(),
-    #     "report_frequency": input("Enter report frequency (Weekly, Monthly): ").strip().lower(),
-    #     "report_date": input("Enter the report date (e.g., 06th January 2025): ").strip(),
-    #     "report_number": input("Enter the report number (e.g., Twenty-third): ").strip(),
-    #     "report_parameters": input("Enter report parameters (comma-separated, e.g., Air, Noise, Soil): ").strip()
-    # }
+    return report_path
