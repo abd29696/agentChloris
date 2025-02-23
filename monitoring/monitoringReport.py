@@ -49,7 +49,7 @@ def add_title_page(doc, report_frequency):
 
 def add_table_of_contents(doc):
     """Adds a TOC field that updates when `F9` is pressed in Word."""
-    doc.add_paragraph("Table of Contents", "Title")
+    doc.add_paragraph("Contents", "Title")
 
     paragraph = doc.add_paragraph()
     paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
@@ -72,6 +72,84 @@ def add_table_of_contents(doc):
     run._r.append(instrText)
     run._r.append(fldChar2)
     run._r.append(fldChar3)
+
+    add_list_of_tables_and_figures(doc)
+
+def add_list_of_tables_and_figures(doc):
+    """Adds separate 'List of Tables' and 'List of Figures' sections to the document."""
+
+    # 📌 List of Tables
+    doc.add_page_break()
+    doc.add_paragraph("Tables", "Title")
+
+    paragraph = doc.add_paragraph()
+    paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+    run = paragraph.add_run()
+
+    fldChar1 = OxmlElement("w:fldChar")
+    fldChar1.set(qn("w:fldCharType"), "begin")
+
+    instrText = OxmlElement("w:instrText")
+    instrText.set(qn("xml:space"), "preserve")
+    instrText.text = "TOC \\h \\z \\t \"Heading 4,1\""  # ✅ Extracts only "Heading 4" for Tables
+
+    fldChar2 = OxmlElement("w:fldChar")
+    fldChar2.set(qn("w:fldCharType"), "separate")
+
+    fldChar3 = OxmlElement("w:fldChar")
+    fldChar3.set(qn("w:fldCharType"), "end")
+
+    run._r.append(fldChar1)
+    run._r.append(instrText)
+    run._r.append(fldChar2)
+    run._r.append(fldChar3)
+
+    # 📌 List of Figures
+    doc.add_page_break()
+    doc.add_paragraph("Figures", "Title")
+
+    paragraph = doc.add_paragraph()
+    paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+    run = paragraph.add_run()
+
+    fldChar1_fig = OxmlElement("w:fldChar")
+    fldChar1_fig.set(qn("w:fldCharType"), "begin")
+
+    instrText_fig = OxmlElement("w:instrText")
+    instrText_fig.set(qn("xml:space"), "preserve")
+    instrText_fig.text = "TOC \\h \\z \\t \"Heading 5,1\""  # ✅ Extracts only "Heading 5" for Figures
+
+    fldChar2_fig = OxmlElement("w:fldChar")
+    fldChar2_fig.set(qn("w:fldCharType"), "separate")
+
+    fldChar3_fig = OxmlElement("w:fldChar")
+    fldChar3_fig.set(qn("w:fldCharType"), "end")
+
+    run._r.append(fldChar1_fig)
+    run._r.append(instrText_fig)
+    run._r.append(fldChar2_fig)
+    run._r.append(fldChar3_fig)
+
+
+def add_list_of_tables(doc):
+    """Extracts tables from the document using 'Heading 4' and adds a 'List of Tables' section."""
+    doc.add_page_break()
+    doc.add_paragraph("Tables", "Title")
+
+    for para in doc.paragraphs:
+        if para.style.name.startswith("Heading 4") and "Table" in para.text:
+            doc.add_paragraph(para.text, style="Normal")
+
+
+def add_list_of_figures(doc):
+    """Extracts figures from the document using 'Heading 4' and adds a 'List of Figures' section."""
+    doc.add_page_break()
+    doc.add_paragraph("Figures", "Title")
+
+    for para in doc.paragraphs:
+        if para.style.name.startswith("Heading 4") and "Figure" in para.text:
+            doc.add_paragraph(para.text, style="Normal")
+
 
 
 def replace_placeholders(text, placeholders):
@@ -252,11 +330,9 @@ def insert_tables(doc, section_data, placeholders, computed_table_numbers):
             header_row = section_data["table"]["data"][0]
 
             if header_row == air_quality_headers and "air_monitoring_data" in placeholders:
-                print("✅ Injecting Air Quality Data")
                 section_data["table"]["data"] = placeholders["air_monitoring_data"]
 
             elif header_row == noise_quality_headers and "noise_monitoring_data" in placeholders:
-                print("✅ Injecting Noise Monitoring Data")
                 section_data["table"]["data"] = placeholders["noise_monitoring_data"]
 
     # 🔹 Ensure Correct Number of Table Numbers Are Available
@@ -273,7 +349,7 @@ def insert_tables(doc, section_data, placeholders, computed_table_numbers):
         table_number = computed_table_numbers[index]  # ✅ Use correct precomputed number
         table_title = replace_placeholders(table_data.get("title", "Table"), placeholders).replace("{table_number}", table_number)
 
-        doc.add_paragraph(table_title)
+        doc.add_heading(table_title, level=4)
 
         # ✅ Insert Updated Table into Document
         table = doc.add_table(rows=len(table_data["data"]), cols=len(table_data["data"][0]))
@@ -342,7 +418,7 @@ def insert_images_and_graphs(doc, section_data, computed_figure_numbers, placeho
                     run.add_picture(image_path, width=Inches(1.5))  # Adjust width if needed
 
                     # 🔹 Add Image Description Below
-                    desc_paragraph = doc.add_paragraph(f"Figure {figure_number} - {image_description}")
+                    desc_paragraph = doc.add_heading(f"Figure {figure_number} - {image_description}", level=5)
                     desc_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
 
                 except Exception as e:
@@ -387,33 +463,33 @@ def format_parameter_section(parameter):
     }
     return formatted_parameters.get(parameter.lower(), parameter.capitalize() + " Monitoring")
 
-def generate_report(placeholders):
+def generate_report():
     """Generates a monitoring report dynamically based on input data."""
 
     structure_file = CONSTANTS["structure_file"]
 
 
-    # placeholders = {'consultancy_name': 'Green Fields Environmental Consulting',
-    #                 'contractor_name': 'sdfsafasf',
-    #                 'project_name': 'sfsaf',
-    #                 'project_number': '45343',
-    #                 'reference_number': '23414',
-    #                 'report_frequency': 'Weekly',
-    #                 'report_date': '324234',
-    #                 'report_number': '4324231',
-    #                 'report_parameters': 'Air, Noise',
-    #                 'monitoring_frequency': '30 mins',
-    #                 'monitoring_locations': [['Monitoring Location', 'Description', 'Latitude', 'Longitude'],
-    #                                          ['ml01', 'fdsafda', '421432', '432421'], ['ml02', 'dfsfddsaf', '23424', '432423']],
-    #                 "monitoring_location_map": "monitoring/test_data/map.png",
-    #                 "monitoring_location_images": {'ml01': 'monitoring/test_data/ml01.png',
-    #                                                'ml02': 'monitoring/test_data/ml02.png'},
-    #                 'air_monitoring_data': [['Monitoring Location', 'Time', 'CO', 'O3', 'NO2', 'SO2', 'PM2.5', 'PM10'],
-    #                                         ['ml01', '423141', '23', '32', '43', '32', '21', '432'],
-    #                                         ['ml02', 'r3242', '432', '23', '32', '43', '23', '34']],
-    #                 'noise_monitoring_data': [['Monitoring Location', 'Time', 'EQ', 'Max', 'AE', '10', '50', '90'],
-    #                                           ['ml01', '3421', '32', '32', '32', '32', '32', '32'],
-    #                                           ['ml02', '342234', '54', '54', '45', '45', '54', '45']]}
+    placeholders = {'consultancy_name': 'Green Fields Environmental Consulting',
+                    'contractor_name': 'sdfsafasf',
+                    'project_name': 'sfsaf',
+                    'project_number': '45343',
+                    'reference_number': '23414',
+                    'report_frequency': 'Weekly',
+                    'report_date': '324234',
+                    'report_number': '4324231',
+                    'report_parameters': 'Air, Noise',
+                    'monitoring_frequency': '30 mins',
+                    'monitoring_locations': [['Monitoring Location', 'Description', 'Latitude', 'Longitude'],
+                                             ['ml01', 'fdsafda', '421432', '432421'], ['ml02', 'dfsfddsaf', '23424', '432423']],
+                    "monitoring_location_map": "monitoring/test_data/map.png",
+                    "monitoring_location_images": {'ml01': 'monitoring/test_data/ml01.png',
+                                                   'ml02': 'monitoring/test_data/ml02.png'},
+                    'air_monitoring_data': [['Monitoring Location', 'Time', 'CO', 'O3', 'NO2', 'SO2', 'PM2.5', 'PM10'],
+                                            ['ml01', '423141', '23', '32', '43', '32', '21', '432'],
+                                            ['ml02', 'r3242', '432', '23', '32', '43', '23', '34']],
+                    'noise_monitoring_data': [['Monitoring Location', 'Time', 'EQ', 'Max', 'AE', '10', '50', '90'],
+                                              ['ml01', '3421', '32', '32', '32', '32', '32', '32'],
+                                              ['ml02', '342234', '54', '54', '45', '45', '54', '45']]}
 
     # Load structured JSON
     with open(structure_file, 'r') as file:

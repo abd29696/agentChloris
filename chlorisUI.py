@@ -8,12 +8,6 @@ noise_data = []
 location_images = {}
 monitoring_location_map = None
 
-ocean_soft_theme = gr.themes.Soft(
-    primary_hue="teal",      # Ocean blue as the primary color
-    secondary_hue="cyan",    # Cyan as a secondary highlight
-    neutral_hue="slate",     # Slate for neutral elements
-    font=["Arial", "sans-serif"]
-)
 class OceanDefaultTheme(gr.themes.Default):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -107,7 +101,7 @@ def generate_and_download_report(contractor_name, project_name, project_number, 
     # ✅ Generate report
     report_path = generate_report(placeholders)
 
-    return report_path
+    return report_path, gr.update(visible=True)
 
 
 # ✅ Create UI
@@ -128,9 +122,11 @@ with gr.Blocks(theme=custom_theme) as demo:
             with gr.Column():
                 gr.Markdown("Add Report Details")
                 report_type = gr.Dropdown(["Monitoring", "CESMP"], label="Select Report Type")
-                report_frequency = gr.Dropdown(["Weekly", "Monthly"], label="Report Frequency")
                 report_date = gr.Textbox(label="Report Date (e.g., 06Jan2025)")
+                report_frequency = gr.Dropdown(["Weekly", "Monthly"], label="Report Frequency")
                 report_number = gr.Textbox(label="Report Number")
+
+
 
         with gr.Column():
             with gr.Row():
@@ -237,14 +233,14 @@ with gr.Blocks(theme=custom_theme) as demo:
         generate_button2 = gr.Button("Generate Report as PDF")
 
 
-    download_output = gr.File(label="Download Report")
+    download_output = gr.File(label="Download Report", visible=False)
 
 
 
     generate_button.click(fn=generate_and_download_report,
                           inputs=[contractor_name, project_name, project_number, reference_number, report_frequency,
                                   report_date, report_number, monitoring_frequency, report_parameters],
-                          outputs=[download_output])
+                          outputs=[download_output, download_output])
 
 # ✅ Launch UI
 demo.launch()
