@@ -243,4 +243,4 @@ with gr.Blocks(theme=custom_theme) as demo:
                           outputs=[download_output, download_output])
 
 # ✅ Launch UI
-demo.launch()
+demo.launch(share=True)
