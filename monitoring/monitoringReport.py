@@ -6,6 +6,7 @@ from docx.oxml.ns import qn
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from docx.shared import Inches
 from PIL import Image
+from docx.shared import Pt
 
 # Constants file path
 CONFIG_PATH = "monitoring/config/constants.json"
@@ -49,7 +50,7 @@ def add_title_page(doc, report_frequency):
 
 def add_table_of_contents(doc):
     """Adds a TOC field that updates when `F9` is pressed in Word."""
-    doc.add_paragraph("Contents", "Title")
+    doc.add_paragraph("Contents", "TOC Heading")
 
     paragraph = doc.add_paragraph()
     paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
@@ -80,7 +81,7 @@ def add_list_of_tables_and_figures(doc):
 
     # 📌 List of Tables
     doc.add_page_break()
-    doc.add_paragraph("Tables", "Title")
+    doc.add_paragraph("Tables", "TOC Heading")
 
     paragraph = doc.add_paragraph()
     paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
@@ -105,8 +106,8 @@ def add_list_of_tables_and_figures(doc):
     run._r.append(fldChar3)
 
     # 📌 List of Figures
-    doc.add_page_break()
-    doc.add_paragraph("Figures", "Title")
+    doc.add_paragraph("")
+    doc.add_paragraph("Figures", "TOC Heading")
 
     paragraph = doc.add_paragraph()
     paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
@@ -177,7 +178,7 @@ def add_section(doc, section_title, section_data, section_number, placeholders, 
     json_title = section_data.get("title", section_title.replace("_", " ").title())
 
     # Add section heading
-    doc.add_heading(f"{section_number} {json_title}", level=heading_level)
+    doc.add_heading(f"{section_number}. {json_title}", level=heading_level)
 
     # Precompute table and figure numbers
     computed_table_numbers, computed_figure_numbers = precompute_numbers(section_data, section_number, numbering_tracker)
@@ -359,6 +360,8 @@ def insert_tables(doc, section_data, placeholders, computed_table_numbers):
             for col_idx, cell_data in enumerate(row_data):
                 table.cell(row_idx, col_idx).text = replace_placeholders(str(cell_data), placeholders)
 
+        doc.add_paragraph("")
+
 
 def insert_images_and_graphs(doc, section_data, computed_figure_numbers, placeholders):
     """Insert multiple images and graphs with descriptions, ensuring they are centered and appear below."""
@@ -386,7 +389,6 @@ def insert_images_and_graphs(doc, section_data, computed_figure_numbers, placeho
                     "description": f"Location {location}"
                 })
 
-
     # 🔹 Handle Multiple Images
     if "images" in section_data:
         for image_data in section_data["images"]:
@@ -411,11 +413,14 @@ def insert_images_and_graphs(doc, section_data, computed_figure_numbers, placeho
                             dpi = (96, 96)
                         img.save(image_path, dpi=dpi)  # Save with corrected DPI
 
+                    # 🔹 Determine Image Size
+                    image_width = Inches(6) if "Location Map" in image_description else Inches(3)  # Larger for Location Map
+
                     # 🔹 Insert Image and Center Align
                     image_paragraph = doc.add_paragraph()
                     image_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
                     run = image_paragraph.add_run()
-                    run.add_picture(image_path, width=Inches(1.5))  # Adjust width if needed
+                    run.add_picture(image_path, width=image_width)  # ✅ Adjust width dynamically
 
                     # 🔹 Add Image Description Below
                     desc_paragraph = doc.add_heading(f"Figure {figure_number} - {image_description}", level=5)
@@ -439,11 +444,14 @@ def insert_images_and_graphs(doc, section_data, computed_figure_numbers, placeho
                         dpi = (96, 96)
                     img.save(image_path, dpi=dpi)
 
+                # 🔹 Determine Image Size
+                image_width = Inches(3) if "Location Map" in image_description else Inches(1.5)  # Larger for Location Map
+
                 # 🔹 Insert Image and Center Align
                 image_paragraph = doc.add_paragraph()
                 image_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
                 run = image_paragraph.add_run()
-                run.add_picture(image_path, width=Inches(1.5))
+                run.add_picture(image_path, width=image_width)
 
                 # 🔹 Add Image Description Below
                 desc_paragraph = doc.add_paragraph(f"Figure {figure_number} - {image_description}")
@@ -451,6 +459,7 @@ def insert_images_and_graphs(doc, section_data, computed_figure_numbers, placeho
 
             except Exception as e:
                 print(f"⚠ Warning: Failed to insert image {image_path}. Error: {e}")
+
 
 
 def format_parameter_section(parameter):
@@ -523,9 +532,9 @@ def generate_report():
 
     # Create Word document
     doc = Document()
+    # template_path = "monitoring/config/template.docx"
+    # doc = Document(template_path)
 
-    style = doc.styles['Normal']
-    style.font.name = 'Cambria'
 
     add_page_number(doc)
 
