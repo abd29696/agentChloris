@@ -5,14 +5,43 @@ from monitoring.monitoringReport import generate_report
 monitoring_data = []
 air_data = []
 noise_data = []
+location_images = {}
+monitoring_location_map = None
+
+class OceanDefaultTheme(gr.themes.Default):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.primary_hue = "#047857"  # Set primary color to teal
+        self.button_radius = "lg"  # Larger rounded buttons
+        self.button_shadow = "md"  # Soft button shadow
+        self.button_primary_background_fill = "#047857"  # Custom button fill color
+        self.button_primary_background_fill_hover = "teal"  # Darker hover effect
+        self.button_primary_text_color = "white"  # White text for contrast
+        self.button_primary_border_color = "#047857"  # ✅ Match border color to button
+        self.button_primary_border_color_hover = "#047857"  # ✅ Keep it subtle
+        self.button_primary_focus_ring_color = "#047857"  # ✅ Soft focus glow instead of orange
 
 
-def add_monitoring_location(location, description, latitude, longitude):
+
+custom_theme = OceanDefaultTheme()
+
+def upload_monitoring_map(file):
+    """Stores the uploaded Monitoring Location Map image path."""
+    global monitoring_location_map
+    if file:
+        monitoring_location_map = file
+        return "✅ Map uploaded successfully!"
+    return "⚠ Please upload a valid image file."
+
+def add_monitoring_location(location, description, latitude, longitude, image):
     """Adds a monitoring location entry to the table and resets input fields."""
     if location and description and latitude and longitude:
         monitoring_data.append([location, description, latitude, longitude])
 
-    return monitoring_data, "", "", "", ""  # Resets input fields
+    if image:
+        location_images[location] = image
+
+    return monitoring_data, "", "", "", "", None  # Resets input fields
 
 
 def add_air_data(location, datetime, co, o3, no2, so2, pm25, pm10):
@@ -40,6 +69,9 @@ def toggle_noise_section(selected_parameters):
     """Toggles the Noise Monitoring input fields visibility based on checkbox selection."""
     return gr.update(visible="Noise" in selected_parameters)
 
+def show_image():
+    return "chloris.png"
+
 
 def generate_and_download_report(contractor_name, project_name, project_number, reference_number, report_frequency,
                                  report_date, report_number, monitoring_frequency, report_parameters):
@@ -60,6 +92,8 @@ def generate_and_download_report(contractor_name, project_name, project_number, 
         "report_parameters": parameters_text,
         "monitoring_frequency": monitoring_frequency,
         "monitoring_locations": [["Monitoring Location", "Description", "Latitude", "Longitude"]] + monitoring_data,
+        "monitoring_location_map": monitoring_location_map,
+        "monitoring_location_images": location_images,
         "air_monitoring_data": [["Monitoring Location", "Time", "CO", "O3", "NO2", "SO2", "PM2.5", "PM10"]] + air_data,
         "noise_monitoring_data": [["Monitoring Location", "Time", "EQ", "Max", "AE", "10", "50", "90"]] + noise_data,
     }
@@ -67,59 +101,90 @@ def generate_and_download_report(contractor_name, project_name, project_number, 
     # ✅ Generate report
     report_path = generate_report(placeholders)
 
-    return report_path
+    return report_path, gr.update(visible=True)
 
 
 # ✅ Create UI
-with gr.Blocks() as demo:
-    gr.Markdown("## Agent Chloris")
+with gr.Blocks(theme=custom_theme) as demo:
 
-    report_type = gr.Dropdown(["Monitoring", "CESMP"], label="Select Report Type")
+    with gr.Column():
+        with gr.Row():
+            image = gr.Image(value="chloris.png", label="Agent Chloris", interactive=False)
 
-    contractor_name = gr.Textbox(label="Contractor Name")
-    project_name = gr.Textbox(label="Project Name")
-    project_number = gr.Textbox(label="Project Number")
-    reference_number = gr.Textbox(label="Reference Number")
-    report_frequency = gr.Dropdown(["Weekly", "Monthly"], label="Report Frequency")
-    report_date = gr.Textbox(label="Report Date (e.g., 06Jan2025)")
-    report_number = gr.Textbox(label="Report Number")
+            with gr.Column():
+                contractor_name = gr.Textbox(label="Contractor Name")
+                with gr.Column():
+                    reference_number = gr.Textbox(label="Reference Number")
+                with gr.Column():
+                    project_name = gr.Textbox(label="Project Name")
+                    project_number = gr.Textbox(label="Project Number")
 
-    gr.Markdown("### Add Monitoring Location Data")
-    monitoring_location = gr.Textbox(label="Monitoring Location")
-    monitoring_description = gr.Textbox(label="Description")
-    monitoring_latitude = gr.Textbox(label="Latitude")
-    monitoring_longitude = gr.Textbox(label="Longitude")
+            with gr.Column():
+                gr.Markdown("Add Report Details")
+                report_type = gr.Dropdown(["Monitoring", "CESMP"], label="Select Report Type")
+                report_date = gr.Textbox(label="Report Date (e.g., 06Jan2025)")
+                report_frequency = gr.Dropdown(["Weekly", "Monthly"], label="Report Frequency")
+                report_number = gr.Textbox(label="Report Number")
 
-    add_data_button = gr.Button("Add Data")
-    monitoring_table = gr.Dataframe(headers=["Monitoring Location", "Description", "Latitude", "Longitude"],
+
+
+        with gr.Column():
+            with gr.Row():
+                with gr.Column():
+                    report_parameters = gr.CheckboxGroup(
+                        ["Air", "Noise", "Soil Quality", "Ground Water", "Sea Water", "Emission", "Vibration"],
+                        label="Monitoring Parameters"
+                    )
+                    with gr.Column():
+                        monitoring_frequency = gr.Dropdown(["15 mins", "30 mins", "1 hr", "24 hr"],
+                                                       label="Monitoring Frequency")
+                with gr.Column():
+                    monitoring_map_upload = gr.File(label="Upload Monitoring Location Map")
+                    monitoring_map_upload.change(fn=upload_monitoring_map, inputs=[monitoring_map_upload])
+
+
+    with gr.Column():
+        gr.Markdown("### Add Monitoring Location Data")
+
+        with gr.Row():
+            location_image = gr.File(label="Upload Location Image")
+
+        with gr.Row():
+            monitoring_location = gr.Textbox(label="Monitoring Location")
+            monitoring_description = gr.Textbox(label="Description")
+            monitoring_latitude = gr.Textbox(label="Latitude")
+            monitoring_longitude = gr.Textbox(label="Longitude")
+            add_data_button = gr.Button("Add Data", variant='primary')
+
+
+
+    with gr.Row():
+        monitoring_table = gr.Dataframe(headers=["Monitoring Location", "Description", "Latitude", "Longitude"],
                                     datatype=["str", "str", "str", "str"],
                                     label="Monitoring Locations Table")
-
-    add_data_button.click(fn=add_monitoring_location,
+        add_data_button.click(fn=add_monitoring_location,
                           inputs=[monitoring_location, monitoring_description, monitoring_latitude,
-                                  monitoring_longitude],
+                                  monitoring_longitude, location_image],
                           outputs=[monitoring_table, monitoring_location, monitoring_description, monitoring_latitude,
-                                   monitoring_longitude])
+                                   monitoring_longitude, location_image])
 
-    monitoring_frequency = gr.Dropdown(["15 mins", "30 mins", "1 hr", "24 hr"], label="Monitoring Frequency")
-    report_parameters = gr.CheckboxGroup(
-        ["Air", "Noise", "Soil", "Ground Water", "Sea Water", "Emission", "Vibration"],
-        label="Monitoring Parameters"
-    )
 
     # ✅ Air Monitoring Section (Hidden by default)
     with gr.Column(visible=False) as air_section:
         gr.Markdown("### Add Air Monitoring Data")
-        air_location = gr.Textbox(label="Monitoring Location")
-        air_datetime = gr.Textbox(label="Date and Time")
-        air_co = gr.Textbox(label="CO")
-        air_o3 = gr.Textbox(label="O3")
-        air_no2 = gr.Textbox(label="NO2")
-        air_so2 = gr.Textbox(label="SO2")
-        air_pm25 = gr.Textbox(label="PM2.5")
-        air_pm10 = gr.Textbox(label="PM10")
+        with gr.Row():
+            air_location = gr.Textbox(label="Monitoring Location")
+            air_datetime = gr.Textbox(label="Date and Time")
+        with gr.Row():
+            air_co = gr.Textbox(label="CO")
+            air_o3 = gr.Textbox(label="O3")
+            air_no2 = gr.Textbox(label="NO2")
+            air_so2 = gr.Textbox(label="SO2")
+            air_pm25 = gr.Textbox(label="PM2.5")
+            air_pm10 = gr.Textbox(label="PM10")
+            add_air_button = gr.Button("Add Air Data", variant='primary')
 
-        add_air_button = gr.Button("Add Air Data")
+
         air_table = gr.Dataframe(
             headers=["Monitoring Location", "Date and Time", "CO", "O3", "NO2", "SO2", "PM2.5", "PM10"],
             datatype=["str", "str", "str", "str", "str", "str", "str", "str"],
@@ -134,16 +199,19 @@ with gr.Blocks() as demo:
     # ✅ Noise Monitoring Section (Hidden by default)
     with gr.Column(visible=False) as noise_section:
         gr.Markdown("### Add Noise Monitoring Data")
-        noise_location = gr.Textbox(label="Monitoring Location")
-        noise_datetime = gr.Textbox(label="DateTime")
-        noise_eq = gr.Textbox(label="EQ")
-        noise_max = gr.Textbox(label="Max")
-        noise_ae = gr.Textbox(label="AE")
-        noise_val10 = gr.Textbox(label="10")
-        noise_val50 = gr.Textbox(label="50")
-        noise_val90 = gr.Textbox(label="90")
+        with gr.Row():
+            noise_location = gr.Textbox(label="Monitoring Location")
+            noise_datetime = gr.Textbox(label="DateTime")
+        with gr.Row():
+            noise_eq = gr.Textbox(label="EQ")
+            noise_max = gr.Textbox(label="Max")
+            noise_ae = gr.Textbox(label="AE")
+            noise_val10 = gr.Textbox(label="10")
+            noise_val50 = gr.Textbox(label="50")
+            noise_val90 = gr.Textbox(label="90")
+            add_noise_button = gr.Button("Add Noise Data", variant='primary')
 
-        add_noise_button = gr.Button("Add Noise Data")
+
         noise_table = gr.Dataframe(
             headers=["Monitoring Location", "DateTime", "EQ", "Max", "AE", "10", "50", "90"],
             datatype=["str", "str", "str", "str", "str", "str", "str", "str"],
@@ -160,13 +228,19 @@ with gr.Blocks() as demo:
     report_parameters.change(fn=toggle_air_section, inputs=[report_parameters], outputs=[air_section])
     report_parameters.change(fn=toggle_noise_section, inputs=[report_parameters], outputs=[noise_section])
 
-    generate_button = gr.Button("Generate Report as Word")
-    download_output = gr.File(label="Download Report")
+    with gr.Row():
+        generate_button = gr.Button("Generate Report as Word", variant="primary")
+        generate_button2 = gr.Button("Generate Report as PDF")
+
+
+    download_output = gr.File(label="Download Report", visible=False)
+
+
 
     generate_button.click(fn=generate_and_download_report,
                           inputs=[contractor_name, project_name, project_number, reference_number, report_frequency,
                                   report_date, report_number, monitoring_frequency, report_parameters],
-                          outputs=[download_output])
+                          outputs=[download_output, download_output])
 
 # ✅ Launch UI
 demo.launch()
