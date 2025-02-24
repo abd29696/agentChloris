@@ -19,6 +19,100 @@ def load_constants():
 
 CONSTANTS = load_constants()
 
+def set_document_theme(doc):
+    """
+    Applies a custom theme to a Word document by setting styles.
+
+    :param doc: The Word Document object.
+    """
+
+    normal_style = doc.styles["Normal"]
+    normal_font = normal_style.font
+    normal_font.name = "Cambria"
+    normal_font.size = Pt(11)
+    normal_style.element.rPr.rFonts.set(qn('w:eastAsia'), "Cambria")  # Ensures consistency
+
+    # 📌 Explicitly set each heading style
+    if "Heading 1" in doc.styles:
+        heading1 = doc.styles["Heading 1"]
+    else:
+        heading1 = doc.styles.add_style("Heading 1", 1)
+    heading1_font = heading1.font
+    heading1_font.name = "Cambria"
+    heading1_font.size = Pt(16)
+    heading1_font.bold = True
+    heading1.element.rPr.rFonts.set(qn('w:eastAsia'), "Cambria")
+
+    heading2 = doc.styles["Heading 2"]
+    heading2_font = heading2.font
+    heading2_font.name = "Cambria"
+    heading2_font.size = Pt(14)
+    heading2_font.bold = True
+    heading2.element.rPr.rFonts.set(qn('w:eastAsia'), "Cambria")
+
+    heading3 = doc.styles["Heading 3"]
+    heading3_font = heading3.font
+    heading3_font.name = "Cambria"
+    heading3_font.size = Pt(13)
+    heading3_font.bold = True
+    heading3.element.rPr.rFonts.set(qn('w:eastAsia'), "Cambria")
+
+    heading4 = doc.styles["Heading 4"]
+    heading4_font = heading4.font
+    heading4_font.name = "Cambria"
+    heading4_font.size = Pt(12)
+    heading4_font.italic = True
+    heading4.element.rPr.rFonts.set(qn('w:eastAsia'), "Cambria")
+
+    heading5 = doc.styles["Heading 5"]
+    heading5_font = heading5.font
+    heading5_font.name = "Cambria"
+    heading5_font.size = Pt(11)
+    heading5_font.italic = True
+    heading5.element.rPr.rFonts.set(qn('w:eastAsia'), "Cambria")
+
+    # 📌 Check if 'TOC Heading' already exists before adding
+    if "TOC Heading" in doc.styles:
+        toc_heading = doc.styles["TOC Heading"]
+    else:
+        toc_heading = doc.styles.add_style("TOC Heading", 1)
+
+    toc_heading_font = toc_heading.font
+    toc_heading_font.name = "Cambria"
+    toc_heading_font.size = Pt(14)
+    toc_heading_font.bold = True
+    toc_heading.element.rPr.rFonts.set(qn('w:eastAsia'), "Cambria")
+
+    # 📌 Customize List Styles
+    bullet_list = doc.styles["List Bullet"]
+    bullet_list_font = bullet_list.font
+    bullet_list_font.name = "Cambria"
+    bullet_list_font.size = Pt(11)
+    bullet_list.element.rPr.rFonts.set(qn('w:eastAsia'), "Cambria")
+
+    # 📌 Customize Table Styles
+    table_style = doc.styles["Table Grid"]
+    table_font = table_style.font
+    table_font.name = "Cambria"
+    table_font.size = Pt(10)
+    table_style.element.rPr.rFonts.set(qn('w:eastAsia'), "Cambria")
+
+    # 📌 Customize Caption Style (for Figures and Tables)
+    caption_style = doc.styles["Caption"]
+    caption_font = caption_style.font
+    caption_font.name = "Cambria"
+    caption_font.size = Pt(10)
+    caption_font.bold = True
+    caption_style.element.rPr.rFonts.set(qn('w:eastAsia'), "Cambria")
+
+    # 📌 Customize Footer Style (for Page Numbers)
+    footer_style = doc.styles["Footer"]
+    footer_font = footer_style.font
+    footer_font.name = "Cambria"
+    footer_font.size = Pt(10)
+    footer_style.element.rPr.rFonts.set(qn('w:eastAsia'), "Cambria")
+
+
 
 def add_page_number(doc):
     """Adds page numbers to the footer of the document."""
@@ -414,7 +508,7 @@ def insert_images_and_graphs(doc, section_data, computed_figure_numbers, placeho
                         img.save(image_path, dpi=dpi)  # Save with corrected DPI
 
                     # 🔹 Determine Image Size
-                    image_width = Inches(6) if "Location Map" in image_description else Inches(3)  # Larger for Location Map
+                    image_width = Inches(5) if "Location Map" in image_description else Inches(2.5)  # Larger for Location Map
 
                     # 🔹 Insert Image and Center Align
                     image_paragraph = doc.add_paragraph()
@@ -425,6 +519,7 @@ def insert_images_and_graphs(doc, section_data, computed_figure_numbers, placeho
                     # 🔹 Add Image Description Below
                     desc_paragraph = doc.add_heading(f"Figure {figure_number} - {image_description}", level=5)
                     desc_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+                    doc.add_paragraph("")
 
                 except Exception as e:
                     print(f"⚠ Warning: Failed to insert image {image_path}. Error: {e}")
@@ -456,6 +551,7 @@ def insert_images_and_graphs(doc, section_data, computed_figure_numbers, placeho
                 # 🔹 Add Image Description Below
                 desc_paragraph = doc.add_paragraph(f"Figure {figure_number} - {image_description}")
                 desc_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+                doc.add_paragraph("")
 
             except Exception as e:
                 print(f"⚠ Warning: Failed to insert image {image_path}. Error: {e}")
@@ -472,33 +568,34 @@ def format_parameter_section(parameter):
     }
     return formatted_parameters.get(parameter.lower(), parameter.capitalize() + " Monitoring")
 
-def generate_report():
+def generate_report(placeholders):
     """Generates a monitoring report dynamically based on input data."""
 
     structure_file = CONSTANTS["structure_file"]
 
 
-    placeholders = {'consultancy_name': 'Green Fields Environmental Consulting',
-                    'contractor_name': 'sdfsafasf',
-                    'project_name': 'sfsaf',
-                    'project_number': '45343',
-                    'reference_number': '23414',
-                    'report_frequency': 'Weekly',
-                    'report_date': '324234',
-                    'report_number': '4324231',
-                    'report_parameters': 'Air, Noise',
-                    'monitoring_frequency': '30 mins',
-                    'monitoring_locations': [['Monitoring Location', 'Description', 'Latitude', 'Longitude'],
-                                             ['ml01', 'fdsafda', '421432', '432421'], ['ml02', 'dfsfddsaf', '23424', '432423']],
-                    "monitoring_location_map": "monitoring/test_data/map.png",
-                    "monitoring_location_images": {'ml01': 'monitoring/test_data/ml01.png',
-                                                   'ml02': 'monitoring/test_data/ml02.png'},
-                    'air_monitoring_data': [['Monitoring Location', 'Time', 'CO', 'O3', 'NO2', 'SO2', 'PM2.5', 'PM10'],
-                                            ['ml01', '423141', '23', '32', '43', '32', '21', '432'],
-                                            ['ml02', 'r3242', '432', '23', '32', '43', '23', '34']],
-                    'noise_monitoring_data': [['Monitoring Location', 'Time', 'EQ', 'Max', 'AE', '10', '50', '90'],
-                                              ['ml01', '3421', '32', '32', '32', '32', '32', '32'],
-                                              ['ml02', '342234', '54', '54', '45', '45', '54', '45']]}
+    # placeholders = {'consultancy_name': 'Green Fields Environmental Consulting',
+    #                 'contractor_name': 'Abdullah Bin Talib for Swimming Pools Co.',
+    #                 'project_name': 'Concrete Structure & Civil Works of the Marina Lifestyle Hotel asset',
+    #                 'project_number': 'PR2408074 ',
+    #                 'reference_number': '2408074-RSG-MAC-WR-23',
+    #                 'report_frequency': 'Weekly',
+    #                 'report_date': '05 Jan 2025',
+    #                 'report_number': '59th',
+    #                 'report_parameters': 'Air, Noise',
+    #                 'monitoring_frequency': '30 mins',
+    #                 'monitoring_locations': [['Monitoring Location', 'Description', 'Latitude', 'Longitude'],
+    #                                          ['ML-01', 'Family Pool', '26.636180°', '36.224574°'],
+    #                                          ['ML-02', 'Couple Pool', '26.627794°', '36.227677°']],
+    #                 'monitoring_location_map': 'monitoring/test_data/map.png',
+    #                 'monitoring_location_images': {'ML-01': 'monitoring/test_data/ml01.png',
+    #                                                'ML-02': 'monitoring/test_data/ml02.png'},
+    #                 'air_monitoring_data': [['Monitoring Location', 'Time', 'CO', 'O3', 'NO2', 'SO2', 'PM2.5', 'PM10'],
+    #                                         ['ML-01', '30/12/2024 09:37', '1016.4', '51', '88.8', '41.4', '14.3', '120.9'],
+    #                                         ['ML-02', '30/12/2024 10:22', '1253.3', '37.0', '64.2', '99.8', '15.8', '131.3']],
+    #                 'noise_monitoring_data': [['Monitoring Location', 'Time', 'EQ', 'Max', 'AE', '10', '50', '90'],
+    #                                           ['ML-01', '30/12/2024 09:37', '61.3', '72.3', '93.9', '64.1', '60.06', '55.8'],
+    #                                           ['ML-02', '30/12/2024 10:22', '61', '82.3', '93.6', '64.2', '58.6', '55.8']]}
 
     # Load structured JSON
     with open(structure_file, 'r') as file:
@@ -532,8 +629,7 @@ def generate_report():
 
     # Create Word document
     doc = Document()
-    # template_path = "monitoring/config/template.docx"
-    # doc = Document(template_path)
+    # set_document_theme(doc)
 
 
     add_page_number(doc)
