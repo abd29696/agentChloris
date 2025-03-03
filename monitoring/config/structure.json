@@ -120,7 +120,7 @@
                 "table": {
                     "title": "Table {table_number}: Air quality monitoring data results",
                     "data": [
-                        ["Monitoring Locations", "Date and Time", "CO", "O3", "NO2", "SO2", "PM2.5", "PM10"]
+                        ["Monitoring Location", "Time", "CO", "O3", "NO2", "SO2", "PM2.5", "PM10"]
                     ]
                 }
             }
@@ -164,7 +164,7 @@
                 "table": {
                     "title": "Table {table_number}: Noise monitoring data results",
                     "data": [
-                        ["Monitoring Location", "Date and Time", "EQ", "MAX", "AE", "10", "50", "90"]
+                        ["Monitoring Location", "Time", "EQ", "Max", "AE", "10", "50", "90"]
                     ]
                 }
             }
