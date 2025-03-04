@@ -1,7 +1,7 @@
 {
     "introduction": {
         "title": "Introduction",
-        "text": "{consultancy_name} (referred to as Consultant) has been commissioned by {contractor_name} (referred to as Contractor) as National center for environmental compliance (NCEC) approved consultant, to conduct {report_frequency} Environmental Monitoring for {project_name}.\n \nThis report documents the environmental monitoring carried out on {report_date} and is the {report_number} Weekly Environmental monitoring.",
+        "text": "{consultancy_name} (referred to as Consultant) has been commissioned by {contractor_name} (referred to as Contractor) as National center for environmental compliance (NCEC) approved consultant, to conduct {report_frequency} Environmental Monitoring for {project_name} of the {project_location}.\n \nThis report documents the environmental monitoring carried out on {report_date} and is the {report_number} Weekly Environmental monitoring.",
         "subsections": {}
     },
     "scope_of_work": {
@@ -10,7 +10,7 @@
         "subsections": {
             "monitoring_locations": {
                 "title": "Monitoring Locations",
-                "text": "The weekly environmental monitoring was conducted on {report_date}. The coordinates of the monitoring locations are provided in Table {table_number} and illustrated in Figure {figure_number}. \nFigure {figure_number} and Figure {figure_number} shows the photographs of both monitored locations.\n",
+                "text": "The weekly environmental monitoring was conducted on {report_date}. The coordinates of the monitoring locations are provided in Table {table_number}. Figure {figure_number} to {figure_number} display photographs of the monitored locations.\n",
                 "table": {
                     "title": "Table {table_number}: Air quality monitoring location",
                     "data": [
@@ -116,12 +116,13 @@
             },
             "results_and_discussions": {
                 "title": "Results and Discussions",
-                "text": "Air quality monitoring data is summarized in Table {table_number}\nThe findings are depicted through illustrative representations in Figure {figure_number} to Figure {figure_number}, of the assessed air quality parameters that shows the compliance with the NCEC standards.\nThe air quality monitoring raw data is attached in Appendix B.",
+                "text": "Air quality monitoring data is summarized in Table {table_number}\nThe findings are depicted through illustrative representations in Figure {figure_number} to {figure_number}, of the assessed air quality parameters that shows the compliance with the NCEC standards.\nThe air quality monitoring raw data is attached in Appendix B.",
                 "table": {
                     "title": "Table {table_number}: Air quality monitoring data results",
                     "data": [
                         ["Monitoring Location", "Time", "CO", "O3", "NO2", "SO2", "PM2.5", "PM10"]
-                    ]
+                    ],
+                    "images" : []
                 }
             }
         }
@@ -175,7 +176,7 @@
     },
     "appendices": {
         "title": "Appendices",
-        "text": "Additional information and data records are included in this section.",
+        "text": "",
         "subsections": {}
     }
 }

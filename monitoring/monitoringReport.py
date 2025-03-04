@@ -1,7 +1,6 @@
 import os
 import json
 from docx import Document
-from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from docx.shared import Inches
@@ -9,6 +8,14 @@ from PIL import Image
 from docx.shared import Pt
 import pandas as pd
 import matplotlib.pyplot as plt
+from docx.oxml import OxmlElement, ns
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+import re
+
+
+
+
+
 
 # Constants file path
 CONFIG_PATH = "monitoring/config/constants.json"
@@ -113,6 +120,65 @@ def set_document_theme(doc):
     footer_font.name = "Cambria"
     footer_font.size = Pt(10)
     footer_style.element.rPr.rFonts.set(qn('w:eastAsia'), "Cambria")
+
+
+
+def add_header(doc, placeholders):
+    """Adds a header with report details on the left and the company logo on the right, without using a table."""
+
+    # Ensure we access the first section's header
+    section = doc.sections[0]  # Default section
+    header = section.header
+
+    # Ensure the header has at least one paragraph
+    if not header.paragraphs:
+        header.add_paragraph()
+
+    # Extract placeholders
+    report_frequency = placeholders.get("report_frequency", None)
+    report_number = placeholders.get("report_number", None)
+
+    project_location = placeholders.get("project_location", "Project Location")
+    project_number = placeholders.get("project_number", "Project Number")
+
+    company_logo_path = placeholders.get("company_logo", None)  # Path to company logo
+
+    # ✅ Left-aligned text: Report details
+    paragraph_left = header.add_paragraph()
+    run_left = paragraph_left.add_run(
+        f"{report_frequency} Environmental Monitoring Report ({report_number})\n"
+        f"{project_location}\n"
+        f"Project No. {project_number}\n"
+    )
+    run_left.font.size = Pt(7)
+    paragraph_left.alignment = WD_ALIGN_PARAGRAPH.LEFT  # Ensure left alignment
+
+    # ✅ Right-aligned image: Company Logo
+    if company_logo_path and os.path.exists(company_logo_path):
+        paragraph_right = header.add_paragraph()
+        paragraph_right.alignment = WD_ALIGN_PARAGRAPH.RIGHT  # Align the paragraph to the right
+        run_right = paragraph_right.add_run()
+
+        try:
+            # Resize image dynamically while maintaining aspect ratio
+            with Image.open(company_logo_path) as img:
+                img_width, img_height = img.size
+                aspect_ratio = img_height / img_width
+                max_width = Inches(1.5)  # Adjust as necessary
+                max_height = Inches(0.6)
+
+                if aspect_ratio > 1:  # Tall image
+                    width = max_height / aspect_ratio
+                    height = max_height
+                else:  # Wide image
+                    width = max_width
+                    height = max_width * aspect_ratio
+
+            run_right.add_picture(company_logo_path, width=width, height=height)
+        except Exception as e:
+            print(f"⚠ Warning: Unable to load company logo. Error: {e}")
+
+
 
 
 
@@ -324,17 +390,29 @@ def precompute_numbers(section_data, section_number, numbering_tracker):
     if "graph" in section_data:
         num_figures += 1
 
-    # ✅ Ensure Charts Get a Figure Number
+    # ✅ Ensure Charts Get a Figure Number **ONLY for Air/Noise Monitoring**
+    valid_chart_headers = {
+        "air_quality": ["Monitoring Location", "Time", "CO", "O3", "NO2", "SO2", "PM2.5", "PM10"],
+        "noise_quality": ["Monitoring Location", "Time", "EQ", "Max", "AE", "10", "50", "90"]
+    }
+
     if "table" in section_data and "data" in section_data["table"]:
-        pollutants = section_data["table"]["data"][0][2:]  # Skip 'Monitoring Location' & 'Time' columns
-        num_figures += len(pollutants)  # Allocate figure numbers for each pollutant's chart
+        table_headers = section_data["table"]["data"][0]  # First row = column headers
+
+        # ✅ Only count figures if headers match air or noise monitoring
+        if table_headers == valid_chart_headers["air_quality"] or table_headers == valid_chart_headers["noise_quality"]:
+            pollutants = table_headers[2:]  # Skip first two columns (Monitoring Location & Time)
+            num_figures += len(pollutants)  # Allocate figure numbers for each pollutant's chart
 
     if "tables" in section_data:
         for tbl in section_data["tables"]:
             if "data" in tbl:
-                pollutants = tbl["data"][0][2:]  # Skip 'Monitoring Location' & 'Time' columns
-                num_figures += len(pollutants)
+                table_headers = tbl["data"][0]  # First row = column headers
+                if table_headers == valid_chart_headers["air_quality"] or table_headers == valid_chart_headers["noise_quality"]:
+                    pollutants = table_headers[2:]  # Skip first two columns (Monitoring Location & Time)
+                    num_figures += len(pollutants)
 
+    # ✅ Assign Figure Numbers Only When Needed
     for _ in range(num_figures):
         numbering_tracker["figure"][main_section_number] = numbering_tracker["figure"].get(main_section_number, 0) + 1
         computed_figure_numbers.append(f"{main_section_number}.{numbering_tracker['figure'][main_section_number]}")
@@ -342,23 +420,45 @@ def precompute_numbers(section_data, section_number, numbering_tracker):
     return computed_table_numbers, computed_figure_numbers
 
 
-
-
 def process_section_text(doc, section_data, placeholders, computed_table_numbers, computed_figure_numbers):
-    """Replace placeholders and add section text."""
+    """Replace placeholders and add section text, ensuring correct figure number ranges while keeping table numbers intact."""
     text = section_data.get("text", "")
 
-    # Replace `{table_number}` placeholders
+    if not text:
+        return
+
+    # ✅ Step 1: Replace `{table_number}` placeholders (UNCHANGED)
     while "{table_number}" in text and computed_table_numbers:
         text = text.replace("{table_number}", computed_table_numbers[0], 1)
 
-    # Replace `{figure_number}` placeholders
-    while "{figure_number}" in text and computed_figure_numbers:
-        text = text.replace("{figure_number}", computed_figure_numbers[0], 1)
+    # ✅ Step 2: Handle `{figure_number} to {figure_number}` correctly
+    match = re.search(r"\{figure_number} to \{figure_number}", text)
 
-    # Add the final processed text to the document
-    if text:
+    if match and len(computed_figure_numbers) >= 2:
+        first_figure = computed_figure_numbers[0]  # Get first available figure number
+        last_figure = computed_figure_numbers[len(computed_figure_numbers) - 1]  # Get last available figure number
+
+        # Replace the range placeholder correctly
+        text = text.replace("{figure_number} to {figure_number}", f"{first_figure} to {last_figure}", 1)
+
+        # **Remove only the used numbers in the range**
+        computed_figure_numbers = computed_figure_numbers[1:]  # Remove first figure (keep last for remaining replacements)
+
+    # ✅ Step 3: Replace remaining `{figure_number}` placeholders sequentially
+    while "{figure_number}" in text and computed_figure_numbers:
+        text = text.replace("{figure_number}", computed_figure_numbers.pop(0), 1)
+
+    # **🔹 Step 4: Handle Case Where Not Enough Figures Are Available**
+    if "{figure_number}" in text:
+        print(f"⚠ Warning: Not enough figure numbers to replace all placeholders in section '{section_data.get('title', '')}'")
+
+    # ✅ Step 5: Add the processed text to the document (Prevents Empty Paragraphs)
+    if text.strip():
         doc.add_paragraph(replace_placeholders(text, placeholders))
+
+
+
+
 
 
 def process_special_sections(section_title, section_data, placeholders, doc):
@@ -698,7 +798,8 @@ def generate_report():
 
     placeholders = {'consultancy_name': 'Green Fields Environmental Consulting',
                     'contractor_name': 'Abdullah Bin Talib for Swimming Pools Co.',
-                    'project_name': 'Concrete Structure & Civil Works of the Marina Lifestyle Hotel asset',
+                    'project_location': 'Rosewood Resort Triple Bay',
+                    'project_name': 'Concrete Structure & Civil Works',
                     'project_number': 'PR2408074 ',
                     'reference_number': '2408074-RSG-MAC-WR-23',
                     'report_frequency': 'Weekly',
@@ -752,6 +853,7 @@ def generate_report():
     # Create Word document
     doc = Document()
     # set_document_theme(doc)
+    add_header(doc, placeholders)
 
 
     add_page_number(doc)
