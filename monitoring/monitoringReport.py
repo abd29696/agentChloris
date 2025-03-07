@@ -1,12 +1,21 @@
 import os
 import json
 from docx import Document
-from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from docx.shared import Inches
 from PIL import Image
 from docx.shared import Pt
+import pandas as pd
+import matplotlib.pyplot as plt
+from docx.oxml import OxmlElement, ns
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+import re
+
+
+
+
+
 
 # Constants file path
 CONFIG_PATH = "monitoring/config/constants.json"
@@ -111,6 +120,65 @@ def set_document_theme(doc):
     footer_font.name = "Cambria"
     footer_font.size = Pt(10)
     footer_style.element.rPr.rFonts.set(qn('w:eastAsia'), "Cambria")
+
+
+
+def add_header(doc, placeholders):
+    """Adds a header with report details on the left and the company logo on the right, without using a table."""
+
+    # Ensure we access the first section's header
+    section = doc.sections[0]  # Default section
+    header = section.header
+
+    # Ensure the header has at least one paragraph
+    if not header.paragraphs:
+        header.add_paragraph()
+
+    # Extract placeholders
+    report_frequency = placeholders.get("report_frequency", None)
+    report_number = placeholders.get("report_number", None)
+
+    project_location = placeholders.get("project_location", "Project Location")
+    project_number = placeholders.get("project_number", "Project Number")
+
+    company_logo_path = placeholders.get("company_logo", None)  # Path to company logo
+
+    # ✅ Left-aligned text: Report details
+    paragraph_left = header.add_paragraph()
+    run_left = paragraph_left.add_run(
+        f"{report_frequency} Environmental Monitoring Report ({report_number})\n"
+        f"{project_location}\n"
+        f"Project No. {project_number}\n"
+    )
+    run_left.font.size = Pt(7)
+    paragraph_left.alignment = WD_ALIGN_PARAGRAPH.LEFT  # Ensure left alignment
+
+    # ✅ Right-aligned image: Company Logo
+    if company_logo_path and os.path.exists(company_logo_path):
+        paragraph_right = header.add_paragraph()
+        paragraph_right.alignment = WD_ALIGN_PARAGRAPH.RIGHT  # Align the paragraph to the right
+        run_right = paragraph_right.add_run()
+
+        try:
+            # Resize image dynamically while maintaining aspect ratio
+            with Image.open(company_logo_path) as img:
+                img_width, img_height = img.size
+                aspect_ratio = img_height / img_width
+                max_width = Inches(1.5)  # Adjust as necessary
+                max_height = Inches(0.6)
+
+                if aspect_ratio > 1:  # Tall image
+                    width = max_height / aspect_ratio
+                    height = max_height
+                else:  # Wide image
+                    width = max_width
+                    height = max_width * aspect_ratio
+
+            run_right.add_picture(company_logo_path, width=width, height=height)
+        except Exception as e:
+            print(f"⚠ Warning: Unable to load company logo. Error: {e}")
+
+
 
 
 
@@ -287,7 +355,7 @@ def add_section(doc, section_title, section_data, section_number, placeholders, 
     add_bullet_list(doc, section_data, placeholders)
 
     # Insert tables, images, and graphs
-    insert_tables(doc, section_data, placeholders, computed_table_numbers)
+    insert_tables(doc, section_data, placeholders, computed_table_numbers, computed_figure_numbers)
     insert_images_and_graphs(doc, section_data, computed_figure_numbers, placeholders)
 
     # Recursively process subsections
@@ -301,9 +369,9 @@ def precompute_numbers(section_data, section_number, numbering_tracker):
     main_section_number = section_number.split(".")[0]  # Extract main section (e.g., "4" from "4.1.2")
 
     computed_table_numbers = []
-    computed_figure_numbers = []  # Includes both images & graphs
+    computed_figure_numbers = []  # Includes images, graphs, and charts
 
-    # ✅ Correctly Precompute Table Numbers for Multiple Tables
+    # ✅ Precompute Table Numbers
     if "table" in section_data:
         numbering_tracker["table"][main_section_number] = numbering_tracker["table"].get(main_section_number, 0) + 1
         computed_table_numbers.append(f"{main_section_number}.{numbering_tracker['table'][main_section_number]}")
@@ -313,15 +381,38 @@ def precompute_numbers(section_data, section_number, numbering_tracker):
             numbering_tracker["table"][main_section_number] = numbering_tracker["table"].get(main_section_number, 0) + 1
             computed_table_numbers.append(f"{main_section_number}.{numbering_tracker['table'][main_section_number]}")
 
-    # ✅ Precompute Figure Numbers for Multiple Images and Graphs
+    # ✅ Precompute Figure Numbers for Images, Graphs, and Charts
     num_figures = 0
     if "image" in section_data:
         num_figures += 1
     if "images" in section_data:
-        num_figures += len(section_data["images"])  # ✅ Count all images
+        num_figures += len(section_data["images"])
     if "graph" in section_data:
         num_figures += 1
 
+    # ✅ Ensure Charts Get a Figure Number **ONLY for Air/Noise Monitoring**
+    valid_chart_headers = {
+        "air_quality": ["Monitoring Location", "Time", "CO", "O3", "NO2", "SO2", "PM2.5", "PM10"],
+        "noise_quality": ["Monitoring Location", "Time", "EQ", "Max", "AE", "10", "50", "90"]
+    }
+
+    if "table" in section_data and "data" in section_data["table"]:
+        table_headers = section_data["table"]["data"][0]  # First row = column headers
+
+        # ✅ Only count figures if headers match air or noise monitoring
+        if table_headers == valid_chart_headers["air_quality"] or table_headers == valid_chart_headers["noise_quality"]:
+            pollutants = table_headers[2:]  # Skip first two columns (Monitoring Location & Time)
+            num_figures += len(pollutants)  # Allocate figure numbers for each pollutant's chart
+
+    if "tables" in section_data:
+        for tbl in section_data["tables"]:
+            if "data" in tbl:
+                table_headers = tbl["data"][0]  # First row = column headers
+                if table_headers == valid_chart_headers["air_quality"] or table_headers == valid_chart_headers["noise_quality"]:
+                    pollutants = table_headers[2:]  # Skip first two columns (Monitoring Location & Time)
+                    num_figures += len(pollutants)
+
+    # ✅ Assign Figure Numbers Only When Needed
     for _ in range(num_figures):
         numbering_tracker["figure"][main_section_number] = numbering_tracker["figure"].get(main_section_number, 0) + 1
         computed_figure_numbers.append(f"{main_section_number}.{numbering_tracker['figure'][main_section_number]}")
@@ -330,20 +421,44 @@ def precompute_numbers(section_data, section_number, numbering_tracker):
 
 
 def process_section_text(doc, section_data, placeholders, computed_table_numbers, computed_figure_numbers):
-    """Replace placeholders and add section text."""
+    """Replace placeholders and add section text, ensuring correct figure number ranges while keeping table numbers intact."""
     text = section_data.get("text", "")
 
-    # Replace `{table_number}` placeholders
+    if not text:
+        return
+
+    # ✅ Step 1: Replace `{table_number}` placeholders (UNCHANGED)
     while "{table_number}" in text and computed_table_numbers:
         text = text.replace("{table_number}", computed_table_numbers[0], 1)
 
-    # Replace `{figure_number}` placeholders
-    while "{figure_number}" in text and computed_figure_numbers:
-        text = text.replace("{figure_number}", computed_figure_numbers[0], 1)
+    # ✅ Step 2: Handle `{figure_number} to {figure_number}` correctly
+    match = re.search(r"\{figure_number} to \{figure_number}", text)
 
-    # Add the final processed text to the document
-    if text:
+    if match and len(computed_figure_numbers) >= 2:
+        first_figure = computed_figure_numbers[0]  # Get first available figure number
+        last_figure = computed_figure_numbers[len(computed_figure_numbers) - 1]  # Get last available figure number
+
+        # Replace the range placeholder correctly
+        text = text.replace("{figure_number} to {figure_number}", f"{first_figure} to {last_figure}", 1)
+
+        # **Remove only the used numbers in the range**
+        computed_figure_numbers = computed_figure_numbers[1:]  # Remove first figure (keep last for remaining replacements)
+
+    # ✅ Step 3: Replace remaining `{figure_number}` placeholders sequentially
+    while "{figure_number}" in text and computed_figure_numbers:
+        text = text.replace("{figure_number}", computed_figure_numbers.pop(0), 1)
+
+    # **🔹 Step 4: Handle Case Where Not Enough Figures Are Available**
+    if "{figure_number}" in text:
+        print(f"⚠ Warning: Not enough figure numbers to replace all placeholders in section '{section_data.get('title', '')}'")
+
+    # ✅ Step 5: Add the processed text to the document (Prevents Empty Paragraphs)
+    if text.strip():
         doc.add_paragraph(replace_placeholders(text, placeholders))
+
+
+
+
 
 
 def process_special_sections(section_title, section_data, placeholders, doc):
@@ -397,7 +512,7 @@ def add_bullet_list(doc, section_data, placeholders):
 
 
 
-def insert_tables(doc, section_data, placeholders, computed_table_numbers):
+def insert_tables(doc, section_data, placeholders, computed_table_numbers, computed_figure_numbers):
     """Insert tables using precomputed table numbers and dynamically inject monitoring data when applicable."""
 
     # 🔹 Check if section contains a single table or multiple tables
@@ -409,8 +524,8 @@ def insert_tables(doc, section_data, placeholders, computed_table_numbers):
         return  # No table data present
 
     # ✅ Known headers for data injection
-    air_quality_headers = ["Monitoring Locations", "Date and Time", "CO", "O3", "NO2", "SO2", "PM2.5", "PM10"]
-    noise_quality_headers = ["Monitoring Location", "Date and Time", "EQ", "MAX", "AE", "10", "50", "90"]
+    air_quality_headers = ["Monitoring Location", "Time", "CO", "O3", "NO2", "SO2", "PM2.5", "PM10"]
+    noise_quality_headers = ["Monitoring Location", "Time", "EQ", "Max", "AE", "10", "50", "90"]
 
     # 🔹 Check if this section needs dynamic data injection
     if "title" in section_data:
@@ -455,6 +570,9 @@ def insert_tables(doc, section_data, placeholders, computed_table_numbers):
                 table.cell(row_idx, col_idx).text = replace_placeholders(str(cell_data), placeholders)
 
         doc.add_paragraph("")
+
+        if table_data["data"][0] == air_quality_headers or table_data["data"][0] == noise_quality_headers:
+            insert_charts(doc, section_data, computed_figure_numbers, placeholders)
 
 
 def insert_images_and_graphs(doc, section_data, computed_figure_numbers, placeholders):
@@ -556,6 +674,110 @@ def insert_images_and_graphs(doc, section_data, computed_figure_numbers, placeho
             except Exception as e:
                 print(f"⚠ Warning: Failed to insert image {image_path}. Error: {e}")
 
+def insert_charts(doc, section_data, computed_figure_numbers, placeholders):
+    """Generate and insert charts for air and noise quality monitoring data using sequential figure numbering."""
+
+    # Define headers for air and noise quality
+    air_quality_headers = ["Monitoring Location", "Time", "CO", "O3", "NO2", "SO2", "PM2.5", "PM10"]
+    noise_quality_headers = ["Monitoring Location", "Time", "EQ", "Max", "AE", "10", "50", "90"]  # Ensure correct case
+
+    # Identify if air or noise monitoring data is present
+    if "table" in section_data and "data" in section_data["table"]:
+        table_data = section_data["table"]["data"]
+    elif "tables" in section_data:
+        table_data = section_data["tables"][0]["data"] if section_data["tables"] else []
+    else:
+        print("⚠ Warning: No relevant table data found.")
+        return  # No relevant table data
+
+    # Convert table data to DataFrame
+    df = pd.DataFrame(table_data[1:], columns=table_data[0])  # Use first row as headers
+
+    # ✅ Determine monitoring type
+    if set(df.columns) == set(air_quality_headers):  # Using set() to ignore column order issues
+        monitoring_type = "Air Quality"
+        ncec_standards = {
+            "CO": 40000,
+            "O3": 157,
+            "NO2": 200,
+            "SO2": 441,
+            "PM2.5": 35,
+            "PM10": 340
+        }
+        y_axis_label = "Concentration (μg/m³)"  # ✅ Air quality uses μg/m³
+    elif set(df.columns) == set(noise_quality_headers):  # ✅ Ensuring we match the noise headers correctly
+        monitoring_type = "Noise Quality"
+        ncec_standards = {"EQ": 70}  # ✅ Only EQ benchmark (70 dB)
+        y_axis_label = "Noise Level (dB)"  # ✅ Noise quality uses dB
+    else:
+        print(f"⚠ Warning: Table headers do not match expected Air/Noise quality formats. Headers found: {df.columns.tolist()}")
+        return  # Not an air/noise monitoring table
+
+    # ✅ Extract monitoring locations dynamically
+    locations = df["Monitoring Location"].tolist()
+
+    # ✅ Extract pollutants dynamically (Only EQ for Noise)
+    if monitoring_type == "Air Quality":
+        pollutants = [col for col in df.columns if col not in ["Monitoring Location", "Time"]]
+    elif monitoring_type == "Noise Quality":
+        pollutants = ["EQ"] if "EQ" in df.columns else []  # ✅ Only include EQ for Noise
+
+    # ✅ Ensure we have valid pollutants to plot
+    if not pollutants:
+        print(f"⚠ Warning: No valid pollutants found for {monitoring_type}. Skipping chart generation.")
+        return
+
+    # ✅ Generate and save charts dynamically
+    saved_files = []
+    for pollutant in pollutants:
+        if not computed_figure_numbers:
+            print(f"⚠ Warning: Not enough figure numbers for charts.")
+            continue
+
+        figure_number = computed_figure_numbers.pop(0)  # Fetch the next figure number
+
+        fig, ax = plt.subplots(figsize=(6, 4))  # Set figure size
+
+        # Extract pollutant values for each location
+        pollutant_values = df[pollutant].astype(float).tolist()
+
+        # ✅ Plot bars
+        bars = ax.bar(locations, pollutant_values, color='#1f77b4', width=0.4, label=f"{pollutant} Levels")
+
+        # ✅ Add a horizontal benchmark line if applicable
+        if pollutant in ncec_standards:
+            ax.axhline(y=ncec_standards[pollutant], color='red', linestyle='--', linewidth=2,
+                       label=f"NCEC Std. ({ncec_standards[pollutant]} {y_axis_label})")
+
+        # ✅ Labels and title
+        ax.set_xlabel("Monitoring Locations")
+        ax.set_ylabel(y_axis_label)
+        ax.set_title(f"{monitoring_type} - {pollutant} Levels")
+        ax.legend()
+
+        # ✅ Save the figure
+        filename = f"{pollutant.replace(' ', '_').replace('/', '_')}_levels.png"
+        plt.savefig(filename, dpi=300, bbox_inches='tight')
+        saved_files.append((filename, figure_number, pollutant))
+
+        plt.close(fig)  # ✅ Prevent display when running script
+
+    # ✅ Insert images into Word document
+    for image_path, figure_number, pollutant in saved_files:
+        doc.add_heading(f"Figure {figure_number} - {monitoring_type} - {pollutant} Levels", level=5)
+
+        # ✅ Insert Image and Center Align
+        image_paragraph = doc.add_paragraph()
+        image_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+        run = image_paragraph.add_run()
+        run.add_picture(image_path, width=Inches(4))
+
+        doc.add_paragraph("")  # ✅ Add spacing below
+
+        # ✅ Clean up temporary files
+        os.remove(image_path)
+
+
 
 
 def format_parameter_section(parameter):
@@ -568,34 +790,35 @@ def format_parameter_section(parameter):
     }
     return formatted_parameters.get(parameter.lower(), parameter.capitalize() + " Monitoring")
 
-def generate_report(placeholders):
+def generate_report():
     """Generates a monitoring report dynamically based on input data."""
 
     structure_file = CONSTANTS["structure_file"]
 
 
-    # placeholders = {'consultancy_name': 'Green Fields Environmental Consulting',
-    #                 'contractor_name': 'Abdullah Bin Talib for Swimming Pools Co.',
-    #                 'project_name': 'Concrete Structure & Civil Works of the Marina Lifestyle Hotel asset',
-    #                 'project_number': 'PR2408074 ',
-    #                 'reference_number': '2408074-RSG-MAC-WR-23',
-    #                 'report_frequency': 'Weekly',
-    #                 'report_date': '05 Jan 2025',
-    #                 'report_number': '59th',
-    #                 'report_parameters': 'Air, Noise',
-    #                 'monitoring_frequency': '30 mins',
-    #                 'monitoring_locations': [['Monitoring Location', 'Description', 'Latitude', 'Longitude'],
-    #                                          ['ML-01', 'Family Pool', '26.636180°', '36.224574°'],
-    #                                          ['ML-02', 'Couple Pool', '26.627794°', '36.227677°']],
-    #                 'monitoring_location_map': 'monitoring/test_data/map.png',
-    #                 'monitoring_location_images': {'ML-01': 'monitoring/test_data/ml01.png',
-    #                                                'ML-02': 'monitoring/test_data/ml02.png'},
-    #                 'air_monitoring_data': [['Monitoring Location', 'Time', 'CO', 'O3', 'NO2', 'SO2', 'PM2.5', 'PM10'],
-    #                                         ['ML-01', '30/12/2024 09:37', '1016.4', '51', '88.8', '41.4', '14.3', '120.9'],
-    #                                         ['ML-02', '30/12/2024 10:22', '1253.3', '37.0', '64.2', '99.8', '15.8', '131.3']],
-    #                 'noise_monitoring_data': [['Monitoring Location', 'Time', 'EQ', 'Max', 'AE', '10', '50', '90'],
-    #                                           ['ML-01', '30/12/2024 09:37', '61.3', '72.3', '93.9', '64.1', '60.06', '55.8'],
-    #                                           ['ML-02', '30/12/2024 10:22', '61', '82.3', '93.6', '64.2', '58.6', '55.8']]}
+    placeholders = {'consultancy_name': 'Green Fields Environmental Consulting',
+                    'contractor_name': 'Abdullah Bin Talib for Swimming Pools Co.',
+                    'project_location': 'Rosewood Resort Triple Bay',
+                    'project_name': 'Concrete Structure & Civil Works',
+                    'project_number': 'PR2408074 ',
+                    'reference_number': '2408074-RSG-MAC-WR-23',
+                    'report_frequency': 'Weekly',
+                    'report_date': '05 Jan 2025',
+                    'report_number': '59th',
+                    'report_parameters': 'Air, Noise',
+                    'monitoring_frequency': '30 mins',
+                    'monitoring_locations': [['Monitoring Location', 'Description', 'Latitude', 'Longitude'],
+                                             ['ML-01', 'Family Pool', '26.636180°', '36.224574°'],
+                                             ['ML-02', 'Couple Pool', '26.627794°', '36.227677°']],
+                    'monitoring_location_map': 'monitoring/test_data/map.png',
+                    'monitoring_location_images': {'ML-01': 'monitoring/test_data/ml01.png',
+                                                   'ML-02': 'monitoring/test_data/ml02.png'},
+                    'air_monitoring_data': [['Monitoring Location', 'Time', 'CO', 'O3', 'NO2', 'SO2', 'PM2.5', 'PM10'],
+                                            ['ML-01', '30/12/2024 09:37', '1016.4', '51', '88.8', '41.4', '14.3', '120.9'],
+                                            ['ML-02', '30/12/2024 10:22', '1253.3', '37.0', '64.2', '99.8', '15.8', '131.3']],
+                    'noise_monitoring_data': [['Monitoring Location', 'Time', 'EQ', 'Max', 'AE', '10', '50', '90'],
+                                              ['ML-01', '30/12/2024 09:37', '61.3', '72.3', '93.9', '64.1', '60.06', '55.8'],
+                                              ['ML-02', '30/12/2024 10:22', '61', '82.3', '93.6', '64.2', '58.6', '55.8']]}
 
     # Load structured JSON
     with open(structure_file, 'r') as file:
@@ -630,6 +853,7 @@ def generate_report(placeholders):
     # Create Word document
     doc = Document()
     # set_document_theme(doc)
+    add_header(doc, placeholders)
 
 
     add_page_number(doc)
