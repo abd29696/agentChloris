@@ -23,6 +23,7 @@ class OceanDefaultTheme(gr.themes.Default):
 
 
 
+
 custom_theme = OceanDefaultTheme()
 
 def upload_monitoring_map(file):
